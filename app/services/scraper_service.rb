@@ -16,22 +16,4 @@ class ScraperService
     end
     news_list
   end
-endequire 'open-uri'
-
-class ScraperService
-  SITE_URL = 'https://thehackernews.com/'
-
-  def self.scrape_latest_news
-    doc = Nokogiri::HTML(URI.open(SITE_URL))
-    # Assuming articles are in divs with class 'story-link' or similar; adjust based on inspection
-    articles = doc.css('.story-link').first(5) # Adjust selector
-    news_list = []
-    articles.each do |article|
-      title = article.css('h2').text.strip
-      summary = article.css('p').text.strip
-      link = article.css('a').first['href'] rescue SITE_URL
-      news_list << { title: title, summary: summary, link: link }
-    end
-    news_list
-  end
 end

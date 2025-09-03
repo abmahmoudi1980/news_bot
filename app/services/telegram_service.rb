@@ -6,11 +6,34 @@ class TelegramService
 
   def self.send_news(news_list)
     Telegram::Bot::Client.run(BOT_TOKEN) do |bot|
-      message = "Latest News from The Hacker News (Translated to Persian):\n\n"
-      news_list.each do |news|
-        message += "**#{news[:translated_title]}**\n#{news[:translated_summary]}\n[Read more](#{news[:link]})\n\n"
+      news_list.each_with_index do |news, index|
+        title = news[:translated_title] || news[:title]
+        summary = news[:translated_summary] || news[:summary]
+        
+        # Limit summary length to prevent API errors
+        summary = summary[0..400] + "..." if summary.length > 400
+        
+        message = "📰 *خبر #{index + 1}*\n\n"
+        message += "*#{title}*\n\n"
+        message += "#{summary}\n\n"
+        message += "[🔗 ادامه مطلب](#{news[:link]})"
+        
+        # Send each news as separate message to avoid length issues
+        begin
+          bot.api.send_message(
+            chat_id: CHAT_ID, 
+            text: message, 
+            parse_mode: 'Markdown',
+            disable_web_page_preview: true
+          )
+          sleep(1) # Rate limiting
+        rescue => e
+          puts "Error sending message: #{e.message}"
+          # Fallback to plain text
+          plain_message = message.gsub(/[*_`~>#+\-=|{}.!\\\[\]]/, '')
+          bot.api.send_message(chat_id: CHAT_ID, text: plain_message)
+        end
       end
-      bot.api.send_message(chat_id: CHAT_ID, text: message, parse_mode: 'Markdown')
     end
   end
 
@@ -18,5 +41,13 @@ class TelegramService
     Telegram::Bot::Client.run(BOT_TOKEN) do |bot|
       bot.api.send_message(chat_id: CHAT_ID, text: text)
     end
+  end
+
+  private
+
+  def self.escape_markdown(text)
+    return "" if text.nil? || text.empty?
+    # Escape special characters for MarkdownV2
+    text.gsub(/[_*\[\]()~`>#+=|{}.!-]/) { |match| "\\#{match}" }
   end
 end

@@ -3,7 +3,7 @@ require 'httparty'
 class TranslatorService
   API_URL = 'https://openrouter.ai/api/v1/chat/completions'
   API_KEY = ENV['OPENROUTER_API_KEY']
-  MODEL = 'openai/gpt-3.5-turbo' # Or any model, e.g., 'anthropic/claude-3-haiku'
+  MODEL = 'deepseek/deepseek-chat-v3.1:free' # Or any model, e.g., 'anthropic/claude-3-haiku'
 
   def self.translate_text(text, target_lang = 'Persian')
     prompt = "Translate the following English text to #{target_lang}: #{text}"

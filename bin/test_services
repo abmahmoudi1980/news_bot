@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+
+require_relative '../config/environment'
+
+# Test scraping
+puts "Testing scraping service..."
+news_list = ScraperService.scrape_latest_news
+puts "Found #{news_list.length} articles:"
+
+news_list.each_with_index do |news, index|
+  puts "\n#{index + 1}. Title: #{news[:title]}"
+  puts "   Summary: #{news[:summary][0..100]}..."
+  puts "   Link: #{news[:link]}"
+end
+
+# Test translation
+if news_list.any?
+  puts "\n\nTesting translation service..."
+  first_news = news_list.first
+  translated_title = TranslatorService.translate_text(first_news[:title])
+  puts "Original: #{first_news[:title]}"
+  puts "Translated: #{translated_title}"
+end

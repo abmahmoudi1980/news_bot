@@ -7,10 +7,15 @@ scheduler = Rufus::Scheduler.new
 
 # Function to fetch, translate, and send news
 def fetch_and_send
+  puts "Fetching latest news..."
   news_list = ScraperService.scrape_latest_news
+  puts "Found #{news_list.length} articles"
+  
   translated_news = news_list.map do |news|
+    puts "Translating: #{news[:title][0..50]}..."
     translated_title = TranslatorService.translate_text(news[:title])
     translated_summary = TranslatorService.translate_text(news[:summary])
+    
     # Save to DB
     News.create(
       title: news[:title],
@@ -19,9 +24,16 @@ def fetch_and_send
       translated_title: translated_title,
       translated_summary: translated_summary
     )
+    
     news.merge(translated_title: translated_title, translated_summary: translated_summary)
   end
+  
+  puts "Sending to Telegram..."
   TelegramService.send_news(translated_news)
+  puts "News sent successfully!"
+rescue => e
+  puts "Error in fetch_and_send: #{e.message}"
+  TelegramService.send_message("خطا در دریافت اخبار: #{e.message}")
 end
 
 # Schedule every 6 hours
