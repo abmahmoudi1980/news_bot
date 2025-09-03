@@ -1,0 +1,56 @@
+#!/usr/bin/env ruby
+
+require_relative '../config/environment'
+require 'rufus-scheduler'
+
+scheduler = Rufus::Scheduler.new
+
+# Function to fetch, translate, and send news
+def fetch_and_send
+  news_list = ScraperService.scrape_latest_news
+  translated_news = news_list.map do |news|
+    translated_title = TranslatorService.translate_text(news[:title])
+    translated_summary = TranslatorService.translate_text(news[:summary])
+    # Save to DB
+    News.create(
+      title: news[:title],
+      summary: news[:summary],
+      link: news[:link],
+      translated_title: translated_title,
+      translated_summary: translated_summary
+    )
+    news.merge(translated_title: translated_title, translated_summary: translated_summary)
+  end
+  TelegramService.send_news(translated_news)
+end
+
+# Schedule every 6 hours
+scheduler.every '6h' do
+  fetch_and_send
+end
+
+# Run initial fetch
+fetch_and_send
+
+# Telegram bot
+Thread.new do
+  Telegram::Bot::Client.run(ENV['TELEGRAM_BOT_TOKEN']) do |bot|
+    bot.listen do |message|
+      case message.text
+      when '/start'
+        bot.api.send_message(chat_id: message.chat.id, text: "Hello! Use /latest to get the latest news.")
+      when '/latest'
+        latest_news = News.last(5)
+        if latest_news.empty?
+          fetch_and_send
+        else
+          news_to_send = latest_news.map { |n| { title: n.title, summary: n.summary, link: n.link, translated_title: n.translated_title, translated_summary: n.translated_summary } }
+          TelegramService.send_news(news_to_send)
+        end
+      end
+    end
+  end
+end
+
+# Keep the main thread alive
+scheduler.join
