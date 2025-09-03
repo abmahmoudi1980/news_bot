@@ -39,7 +39,9 @@ A Ruby on Rails application that scrapes the latest 5 news from https://thehacke
 - Scrapes latest 5 news from The Hacker News.
 - Translates titles and summaries to Persian using AI.
 - Sends translated news to Telegram every 6 hours.
-- Responds to `/latest` command for on-demand news.
+- Responds to `/latest` command for news from database (Persian interface).
+- Responds to `/new` command to fetch fresh news immediately (Persian interface).
+- Persian user interface for all bot interactions.
 - Stores news in SQLite database.
 
 ## Dependencies

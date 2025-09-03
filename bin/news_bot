@@ -8,6 +8,11 @@ scheduler = Rufus::Scheduler.new
 # Function to fetch, translate, and send news
 def fetch_and_send
   puts "Fetching latest news..."
+  
+  # Clear old news from database
+  News.delete_all
+  puts "Cleared old news from database"
+  
   news_list = ScraperService.scrape_latest_news
   puts "Found #{news_list.length} articles"
   
@@ -50,7 +55,7 @@ Thread.new do
     bot.listen do |message|
       case message.text
       when '/start'
-        bot.api.send_message(chat_id: message.chat.id, text: "Hello! Use /latest to get the latest news.")
+        bot.api.send_message(chat_id: message.chat.id, text: "سلام! از دستور /latest برای دریافت آخرین اخبار از پایگاه داده یا /new برای دریافت اخبار تازه استفاده کنید.")
       when '/latest'
         latest_news = News.last(5)
         if latest_news.empty?
@@ -58,6 +63,14 @@ Thread.new do
         else
           news_to_send = latest_news.map { |n| { title: n.title, summary: n.summary, link: n.link, translated_title: n.translated_title, translated_summary: n.translated_summary } }
           TelegramService.send_news(news_to_send)
+        end
+      when '/new'
+        bot.api.send_message(chat_id: message.chat.id, text: "🔄 در حال دریافت آخرین اخبار...")
+        begin
+          fetch_and_send
+          bot.api.send_message(chat_id: message.chat.id, text: "✅ اخبار تازه ارسال شد!")
+        rescue => e
+          bot.api.send_message(chat_id: message.chat.id, text: "❌ خطا در دریافت اخبار: #{e.message}")
         end
       end
     end
